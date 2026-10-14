@@ -1,0 +1,123 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@fontsource-variable/golos-text/index.css';
+@import '@fontsource-variable/unbounded/index.css';
+
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+:root {
+  --radius: 0.625rem;
+  --background: #eef0f3;
+  --foreground: #14171c;
+  --card: #ffffff;
+  --card-foreground: #14171c;
+  --popover: #ffffff;
+  --popover-foreground: #14171c;
+  --primary: #2c3fd1;
+  --primary-foreground: #ffffff;
+  --secondary: #e3e6ec;
+  --secondary-foreground: #14171c;
+  --muted: #e6e9ee;
+  --muted-foreground: #5d6573;
+  --accent: #e3e6fb;
+  --accent-foreground: #1d2a9c;
+  --destructive: #c2362b;
+  --destructive-foreground: #ffffff;
+  --success: #18794e;
+  --warning: #9a5b00;
+  --border: #d9dde3;
+  --input: #cfd4db;
+  --ring: #2c3fd1;
+  --stage: #000000;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1216;
+    --foreground: #e7e9ee;
+    --card: #171b21;
+    --card-foreground: #e7e9ee;
+    --popover: #1b2027;
+    --popover-foreground: #e7e9ee;
+    --primary: #8e9bff;
+    --primary-foreground: #0f1216;
+    --secondary: #222831;
+    --secondary-foreground: #e7e9ee;
+    --muted: #1d2229;
+    --muted-foreground: #98a0ad;
+    --accent: #232a4d;
+    --accent-foreground: #c9cfff;
+    --destructive: #f0645a;
+    --destructive-foreground: #0f1216;
+    --success: #4cc38a;
+    --warning: #e0a339;
+    --border: #272d36;
+    --input: #333a45;
+    --ring: #8e9bff;
+    --stage: #000000;
+  }
+}
+
+@theme inline {
+  --font-sans: 'Golos Text Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Unbounded Variable', 'Golos Text Variable', ui-sans-serif, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-stage: var(--stage);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Tailwind v4 restored the browser's arrow cursor on buttons — everything clickable needs a pointer */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  input:is([type='file'], [type='checkbox'], [type='radio']):not(:disabled),
+  select:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: 'tnum' 0;
+    min-height: 100dvh;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

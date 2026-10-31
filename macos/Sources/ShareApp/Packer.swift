@@ -7,30 +7,44 @@ enum Packer {
         (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
     }
 
-    /// Bytes of all regular files under the folder.
-    static func totalSize(_ folder: URL) -> Int64 {
+    /// Bytes of all regular files in the items (folders walked).
+    static func totalSize(_ items: [URL]) -> Int64 {
         var total: Int64 = 0
         let keys: [URLResourceKey] = [.isRegularFileKey, .fileSizeKey]
-        if let e = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: keys, options: []) {
-            for case let url as URL in e {
-                if let v = try? url.resourceValues(forKeys: Set(keys)), v.isRegularFile == true {
-                    total += Int64(v.fileSize ?? 0)
+        for item in items {
+            if let v = try? item.resourceValues(forKeys: Set(keys)), v.isRegularFile == true {
+                total += Int64(v.fileSize ?? 0)
+                continue
+            }
+            if let e = FileManager.default.enumerator(at: item, includingPropertiesForKeys: keys, options: []) {
+                for case let url as URL in e {
+                    if let v = try? url.resourceValues(forKeys: Set(keys)), v.isRegularFile == true {
+                        total += Int64(v.fileSize ?? 0)
+                    }
                 }
             }
         }
         return total
     }
 
-    /// `<tmp>/<uuid>/<name>.zip` for a folder; the caller removes the parent directory after the upload.
-    /// ditto reports nothing, so `progress` gets the growing size of the archive against the
-    /// folder size — exact for media and other incompressible data, short of the end otherwise.
-    static func zip(_ folder: URL, progress: @escaping (Int64) -> Void) async throws -> URL {
+    /// The archive name for a set of items: "game.zip" for one, "game +2.zip" for several.
+    static func archiveName(_ items: [URL]) -> String {
+        let first = items[0]
+        let stem = isDirectory(first) ? first.lastPathComponent : first.deletingPathExtension().lastPathComponent
+        return items.count > 1 ? "\(stem) +\(items.count - 1).zip" : stem + ".zip"
+    }
+
+    /// `<tmp>/<uuid>/<name>` with the items zipped; the caller removes the parent directory after
+    /// the upload. ditto reports nothing, so `progress` gets the growing size of the archive
+    /// against the total size — exact for media and other incompressible data, short of the
+    /// end otherwise.
+    static func zip(_ items: [URL], name: String, progress: @escaping (Int64) -> Void) async throws -> URL {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let out = dir.appendingPathComponent(folder.lastPathComponent + ".zip")
+        let out = dir.appendingPathComponent(name)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        process.arguments = ["-c", "-k", "--sequesterRsrc", "--keepParent", folder.path, out.path]
+        process.arguments = ["-c", "-k", "--sequesterRsrc", "--keepParent"] + items.map(\.path) + [out.path]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         let poll = Task {

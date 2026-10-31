@@ -127,14 +127,29 @@ final class AppState: ObservableObject {
     /// One link for all the files. `expiresIn` — seconds until the link dies (nil — never);
     /// `autoCopy` — put the link on the pasteboard as soon as it is ready.
     func upload(_ files: [URL], expiresIn: TimeInterval? = nil, autoCopy: Bool = false) {
-        let files = files.filter { (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true }
+        let files = files.filter {
+            (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true || Packer.isDirectory($0)
+        }
         guard !files.isEmpty, uploadTask == nil else { return }
         error = nil
         copied = false
         phase = .uploading(index: 1, total: files.count, name: L10n.creatingLink, done: 0, size: 0)
         uploadTask = Task { [api] in
             var slug: String?
+            var temp: [URL] = []
+            defer { for t in temp { try? FileManager.default.removeItem(at: t.deletingLastPathComponent()) } }
             do {
+                // folders become zip archives first; the link is created after, so a slow zip
+                // does not eat into its lifetime
+                var files = files
+                for (i, file) in files.enumerated() where Packer.isDirectory(file) {
+                    phase = .uploading(index: i + 1, total: files.count, name: L10n.packing(file.lastPathComponent),
+                                       done: 0, size: 0)
+                    let zip = try await Packer.zip(file)
+                    temp.append(zip)
+                    files[i] = zip
+                }
+                phase = .uploading(index: 1, total: files.count, name: L10n.creatingLink, done: 0, size: 0)
                 let expiresAt = expiresIn.map { Int(Date().addingTimeInterval($0).timeIntervalSince1970) }
                 let share = try await api.createShare(expiresAt: expiresAt)
                 slug = share.slug
@@ -183,7 +198,7 @@ final class AppState: ObservableObject {
     func chooseFiles() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
+        panel.canChooseDirectories = true
         panel.canChooseFiles = true
         NSApp.activate(ignoringOtherApps: true)
         if panel.runModal() == .OK { upload(panel.urls) }

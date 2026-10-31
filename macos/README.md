@@ -1,6 +1,7 @@
 # Share for macOS
 
-A menu bar app: drop files on it (or click to choose), get a link, copy it. Uploads go over
+A menu bar app: drop files or folders on it (or click to choose), get a link, copy it. A
+folder is zipped on the Mac first (`ditto`, like Finder's "Compress") and uploaded as one file. Uploads go over
 tus to your share server; the link is the same `/s/<slug>` as in the web interface.
 
 ## Build

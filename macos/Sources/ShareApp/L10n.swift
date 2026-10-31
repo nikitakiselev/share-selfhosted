@@ -16,10 +16,11 @@ enum L10n {
     static var cancel: String { t("Отмена", "Cancel") }
     static var signOut: String { t("Выход", "Sign out") }
     static var quit: String { t("Закрыть приложение", "Quit") }
-    static var dropHere: String { t("Перетащите файлы сюда", "Drop files here") }
+    static var dropHere: String { t("Перетащите файлы или папки", "Drop files or folders") }
     static var orClick: String { t("или нажмите, чтобы выбрать", "or click to choose") }
     static var uploading: String { t("Загрузка", "Uploading") }
     static var creatingLink: String { t("Создаём ссылку…", "Creating the link…") }
+    static func packing(_ name: String) -> String { t("Упаковываем \(name)…", "Zipping \(name)…") }
     static var copy: String { t("Скопировать ссылку", "Copy link") }
     static var copied: String { t("Скопировано", "Copied") }
     static var linkReady: String { t("Ссылка готова", "Link is ready") }

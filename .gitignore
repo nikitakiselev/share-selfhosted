@@ -12,3 +12,6 @@ data/
 .DS_Store
 ._*
 uv.lock
+.build/
+macos/build/
+.idea/

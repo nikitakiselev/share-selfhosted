@@ -32,6 +32,8 @@ export const router = createRouter({
           meta: { title: 'page.share' },
         },
         { path: 'users', name: 'users', component: () => import('./admin/UsersView.vue'), meta: { title: 'page.users' } },
+        // Opened by the desktop app: after sign-in it issues the app a one-time code
+        { path: 'connect', name: 'connect', component: () => import('./admin/ConnectAppView.vue'), meta: { title: 'page.connect' } },
       ],
     },
     // Invitation and password reset — before sign-in, without the admin header

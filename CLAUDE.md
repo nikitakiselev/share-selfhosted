@@ -4,6 +4,7 @@ Self-hosted file sharing by links: resumable tus uploads, video player, ZIP, pas
 
 - `backend/` — Starlette + SQLite + ffmpeg, package `src/share_app`, tests in `tests/`.
 - `frontend/` — Vue 3 + Vite + TypeScript + Tailwind v4; the build is served by the backend as static files.
+- `macos/` — SwiftPM menu bar app (SwiftUI, macOS 14+); `./build.sh` makes `build/Share.app`, needs Xcode.
 
 ## Commands
 
@@ -21,6 +22,9 @@ npm run build && npx vitest run
 
 # image
 docker build -t share-selfhosted .
+
+# macOS app (see macos/README.md)
+cd macos && ./build.sh && swift test
 ```
 
 ## Non-obvious
@@ -37,6 +41,11 @@ docker build -t share-selfhosted .
 - Sign-in is by email only; `login` (username) is for display. Invites are issued for an email.
   Tokens are stored only as a hash, so a link cannot be shown again: "New link" (`/renew`) issues a
   fresh one and kills the old one.
+- The desktop app signs in through `/connect?challenge=` (PKCE): the browser session calls
+  `POST /api/auth/app/connect` for a one-time code, the page hands it to `share-app://connect?code=`,
+  the app exchanges it at `POST /api/auth/app/token` for an ordinary session. Codes live in process
+  memory (`Context.app_codes`). A session sent as `Authorization: Bearer` skips the Origin check:
+  it has no cookie, so a web page cannot forge it.
 - Every user has a permanent quota `users.quota_bytes` (NULL — unlimited). New users get the quota
   of their invite, `SHARE_DEFAULT_QUOTA_GB` by default. Used = sum of `files.size`, unfinished
   uploads included. The quota is checked only when a tus upload is created: a started upload always
@@ -51,3 +60,9 @@ docker build -t share-selfhosted .
   for codes the UI does not know). Server-rendered pages and OG use `SHARE_LANGUAGE`.
 - DB schema: only a fresh install or the current version is supported, anything else fails on
   start. There are no migrations from older schemas.
+
+## Deploying the author's instance
+
+share.nikitakiselev.com is not run from the published image. It is deployed from the `homelab`
+repo: `~/code/homelab/infra/share/CLAUDE.md` has the host, the snapshot step and the script
+(`infra/deploy/install_share.sh deploy`). Tagging `vX.Y.Z` here only publishes the public image.

@@ -64,6 +64,8 @@ def routes() -> list[Route]:
         Route(AUTH + "/password", auth_api.change_password, methods=["POST"]),
         Route(AUTH + "/tokens/{token}", auth_api.token_info),
         Route(AUTH + "/tokens/{token}", auth_api.token_accept, methods=["POST"]),
+        Route(AUTH + "/app/connect", auth_api.app_connect, methods=["POST"]),
+        Route(AUTH + "/app/token", auth_api.app_token, methods=["POST"]),
         # own shares and files
         Route(APP + "/usage", app_api.usage),
         Route(APP + "/shares", app_api.list_shares),
@@ -92,6 +94,7 @@ def routes() -> list[Route]:
         Route("/shares", pages.spa),
         Route("/shares/{slug}", pages.spa),
         Route("/users", pages.spa),
+        Route("/connect", pages.spa),
         Route("/invite/{token}", pages.spa),
         Route("/reset/{token}", pages.spa),
         Route("/s/{slug}", pages.share_page),

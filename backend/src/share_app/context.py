@@ -54,6 +54,9 @@ class Context:
     login_limiter: auth.RateLimiter = field(default_factory=lambda: auth.RateLimiter(5, 300))
     login_user_limiter: auth.RateLimiter = field(default_factory=lambda: auth.RateLimiter(10, 900))
     unlock_limiter: auth.RateLimiter = field(default_factory=lambda: auth.RateLimiter(10, 900))
+    app_token_limiter: auth.RateLimiter = field(default_factory=lambda: auth.RateLimiter(10, 900))
+    # pending desktop-app connect codes by token hash
+    app_codes: dict[str, accounts.AppCode] = field(default_factory=dict)
     upload_locks: dict[str, asyncio.Lock] = field(default_factory=dict)
 
     # --- request ---
@@ -65,6 +68,12 @@ class Context:
         return auth.is_internal(self.client_ip(request), self.settings.internal_nets)
 
     def session_token(self, request: Request) -> str | None:
+        """The browser sends the session in a cookie, the desktop app as `Authorization: Bearer`.
+        A Bearer request carries no cookie, so the Origin check does not apply to it — and
+        nothing can forge it from a web page."""
+        scheme, _, token = request.headers.get("authorization", "").partition(" ")
+        if scheme.lower() == "bearer":
+            return token.strip() or None
         return request.cookies.get(accounts.SESSION_COOKIE)
 
     def current_user(self, request: Request) -> dict[str, Any] | None:

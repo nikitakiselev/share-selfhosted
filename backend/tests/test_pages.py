@@ -26,7 +26,7 @@ def settings(settings: Settings, request) -> Settings:
 
 @LANGS
 def test_spa_routes(anon: TestClient, settings: Settings):
-    for path in ("/", "/shares", "/shares/abc", "/users", "/invite/abc", "/reset/abc"):
+    for path in ("/", "/shares", "/shares/abc", "/users", "/connect", "/invite/abc", "/reset/abc"):
         r = anon.get(path)
         assert r.status_code == 200 and r.headers["cache-control"] == "no-cache"
         assert "<title>Share</title>" in r.text and "<!--og-->" not in r.text

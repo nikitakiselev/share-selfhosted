@@ -334,6 +334,12 @@ npx vitest run
 npm run build      # в frontend/dist, его бэкенд отдаёт из SHARE_STATIC_DIR
 ```
 
+## Приложение для macOS
+
+В `macos/` лежит небольшое приложение для строки меню: перетащите файлы и скопируйте ссылку.
+Оно входит через сайт (страница `/connect`) и загружает файлы через тот же tus API. Для
+сборки нужен Xcode, см. [macos/README.md](macos/README.md).
+
 ## Лицензия
 
 MIT, см. [LICENSE](LICENSE).

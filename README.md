@@ -332,6 +332,12 @@ npx vitest run
 npm run build      # into frontend/dist, which the backend serves from SHARE_STATIC_DIR
 ```
 
+## macOS app
+
+`macos/` holds a small menu bar app: drop files on it and copy the link. It signs in through
+the website (the `/connect` page) and uploads over the same tus API. Building needs Xcode, see
+[macos/README.md](macos/README.md).
+
 ## License
 
 MIT, see [LICENSE](LICENSE).

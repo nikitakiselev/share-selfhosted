@@ -102,6 +102,43 @@ async def login(request: Request) -> Response:
     return _login_response(ctx, request, user["id"])
 
 
+# --- desktop app ---
+
+async def app_connect(request: Request) -> JSONResponse:
+    """The `/connect` page: a signed-in browser asks for a one-time code for the desktop app."""
+    ctx = _ctx(request)
+    user = ctx.require_user(request)
+    data = await json_body(request)
+    challenge = accounts.normalize_challenge(data.get("challenge"))
+    code = accounts.issue_app_code(ctx.app_codes, user["id"], challenge, clock.now())
+    log.info("app connect code issued: %s, IP %s", user["login"], ctx.client_ip(request))
+    return JSONResponse({"code": code, "expires_in": accounts.APP_CODE_TTL}, headers={"Cache-Control": "no-store"})
+
+
+async def app_token(request: Request) -> JSONResponse:
+    """The desktop app exchanges the code and its PKCE verifier for a session token."""
+    ctx = _ctx(request)
+    now = clock.now()
+    ip = ctx.client_ip(request)
+    if ctx.app_token_limiter.blocked(ip, now):
+        raise too_many_attempts()
+    data = await json_body(request)
+    user_id = accounts.redeem_app_code(ctx.app_codes, data.get("code"), data.get("verifier"), now)
+    user = ctx.db.get_user(user_id) if user_id is not None else None
+    if user is None:
+        ctx.app_token_limiter.hit(ip, now)
+        log.warning("failed app connect, IP %s", ip)
+        raise ApiError(403, "bad_code", "Unknown, expired or already used code")
+    if user["blocked_at"] is not None:
+        raise ApiError(403, "blocked", "Account is blocked")
+    ctx.app_token_limiter.reset(ip)
+    token = accounts.create_session(ctx.db, user["id"], now, ip, request.headers.get("user-agent"))
+    ctx.db.update_user(user["id"], last_login_at=now)
+    log.info("app connected: %s (%s), IP %s", user["login"], user["email"], ip)
+    return JSONResponse({"token": token, "user": session_body(ctx, request, user)},
+                        headers={"Cache-Control": "no-store"})
+
+
 async def logout(request: Request) -> Response:
     ctx = _ctx(request)
     token = ctx.session_token(request)

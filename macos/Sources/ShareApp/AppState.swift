@@ -7,7 +7,7 @@ enum Phase: Equatable {
     case signedOut(waiting: Bool)
     case ready
     case uploading(index: Int, total: Int, name: String, done: Int64, size: Int64)
-    case finished(url: String)
+    case finished(url: String, names: [String], expires: Bool)
 }
 
 @MainActor
@@ -19,6 +19,8 @@ final class AppState: ObservableObject {
     @Published var user: User?
     @Published var error: String?
     @Published var copied = false
+    /// Set by the status bar controller: brings the popover up (uploads started from Finder).
+    var showPopover: (() -> Void)?
 
     let api: ApiClient
     private let serverHost: String
@@ -68,12 +70,29 @@ final class AppState: ObservableObject {
         phase = .signedOut(waiting: false)
     }
 
-    /// share-app://connect?code=… from the website.
+    /// share-app://connect?code=… from the website, share-app://upload?path=…&expires=… from the
+    /// Finder share extension.
     func handle(url: URL) {
-        guard url.host == "connect",
-              let code = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-                  .queryItems?.first(where: { $0.name == "code" })?.value,
-              let p = pkce else { return }
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        switch url.host {
+        case "upload":
+            let files = items.filter { $0.name == "path" }.compactMap { $0.value }.map { URL(fileURLWithPath: $0) }
+            let expires = items.first { $0.name == "expires" }?.value.flatMap(TimeInterval.init)
+            showPopover?()
+            if api.token == nil {
+                error = L10n.pleaseSignIn
+            } else {
+                upload(files, expiresIn: expires, autoCopy: true)
+            }
+        case "connect":
+            connect(code: items.first { $0.name == "code" }?.value)
+        default:
+            break
+        }
+    }
+
+    private func connect(code: String?) {
+        guard let code, let p = pkce else { return }
         pkce = nil
         Task {
             do {
@@ -105,7 +124,9 @@ final class AppState: ObservableObject {
 
     // --- uploads ---
 
-    func upload(_ files: [URL]) {
+    /// One link for all the files. `expiresIn` — seconds until the link dies (nil — never);
+    /// `autoCopy` — put the link on the pasteboard as soon as it is ready.
+    func upload(_ files: [URL], expiresIn: TimeInterval? = nil, autoCopy: Bool = false) {
         let files = files.filter { (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true }
         guard !files.isEmpty, uploadTask == nil else { return }
         error = nil
@@ -114,7 +135,8 @@ final class AppState: ObservableObject {
         uploadTask = Task { [api] in
             var slug: String?
             do {
-                let share = try await api.createShare()
+                let expiresAt = expiresIn.map { Int(Date().addingTimeInterval($0).timeIntervalSince1970) }
+                let share = try await api.createShare(expiresAt: expiresAt)
                 slug = share.slug
                 let tus = TusUploader(api: api, slug: share.slug)
                 for (i, file) in files.enumerated() {
@@ -127,7 +149,8 @@ final class AppState: ObservableObject {
                         }
                     }
                 }
-                phase = .finished(url: share.url)
+                phase = .finished(url: share.url, names: files.map(\.lastPathComponent), expires: expiresIn != nil)
+                if autoCopy { copyLink(share.url) }
             } catch is CancellationError {
                 if let slug { try? await api.deleteShare(slug) }
                 phase = .ready

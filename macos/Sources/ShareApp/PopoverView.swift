@@ -91,8 +91,8 @@ private struct SignedInView: View {
                 switch state.phase {
                 case .uploading(let index, let total, let name, let done, let size):
                     UploadingView(index: index, total: total, name: name, done: done, size: size)
-                case .finished(let url):
-                    FinishedView(url: url)
+                case .finished(let url, let names, let expires):
+                    FinishedView(url: url, names: names, expires: expires)
                 default:
                     dropZone
                 }
@@ -169,26 +169,40 @@ private struct UploadingView: View {
 private struct FinishedView: View {
     @EnvironmentObject private var state: AppState
     let url: String
+    let names: [String]
+    let expires: Bool
+
+    private var title: String {
+        guard let first = names.first else { return L10n.linkReady }
+        return names.count > 1 ? "\(first) \(L10n.andMore(names.count - 1))" : first
+    }
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Spacer()
             Label(L10n.linkReady, systemImage: "checkmark.circle.fill")
-                .font(.callout.weight(.medium))
+                .font(.caption.weight(.medium))
                 .foregroundStyle(.green)
+            Text(title)
+                .font(.callout.weight(.medium))
+                .lineLimit(1).truncationMode(.middle)
             Text(url)
-                .font(.callout.monospaced())
-                .textSelection(.enabled)
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
                 .lineLimit(1).truncationMode(.middle)
                 .padding(.horizontal, 10).padding(.vertical, 6)
+                .frame(maxWidth: .infinity)
                 .background(RoundedRectangle(cornerRadius: 7).fill(.background.opacity(0.7)))
+            if expires {
+                Text(L10n.expiresInHour).font(.caption).foregroundStyle(.tertiary)
+            }
             HStack(spacing: 10) {
                 Button(state.copied ? L10n.copied : L10n.copy) { state.copyLink(url) }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
                 Button(L10n.newUpload) { state.reset() }.buttonStyle(.link)
             }
-            .padding(.top, 4)
+            .padding(.top, 6)
             Spacer()
         }
         .padding(.horizontal, 18)

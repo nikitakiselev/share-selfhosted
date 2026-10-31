@@ -34,6 +34,8 @@ enum L10n {
     }
     static func used(_ used: String) -> String { t("Занято \(used), без лимита", "\(used) used, unlimited") }
     static func fileOf(_ i: Int, _ n: Int) -> String { t("Файл \(i) из \(n)", "File \(i) of \(n)") }
+    static func andMore(_ n: Int) -> String { t("и ещё \(n)", "and \(n) more") }
+    static var expiresInHour: String { t("Ссылка живёт 1 час", "The link expires in 1 hour") }
 
     static func size(_ bytes: Int64) -> String {
         let f = ByteCountFormatter()

@@ -9,16 +9,35 @@ if [ -z "${DEVELOPER_DIR:-}" ] && [ -d /Applications/Xcode.app/Contents/Develope
 fi
 swift build -c release 2>&1 | grep -v "ld: warning: search path" || true
 test -x .build/release/ShareApp
+test -x .build/release/ShareExtension
 APP=build/Share.app
+EXT="$APP/Contents/PlugIns/ShareExtension.appex"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$EXT/Contents/MacOS"
 cp .build/release/ShareApp "$APP/Contents/MacOS/Share"
 cp Info.plist "$APP/Contents/Info.plist"
-if [ -n "${VERSION:-}" ]; then
-  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
-  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$APP/Contents/Info.plist"
+cp Icons/MenuBarIcon.svg "$APP/Contents/Resources/"
+# the app icon (Dock, Finder, the share menu) from Icons/AppIcon.png, when it exists
+if [ -f Icons/AppIcon.png ]; then
+  ICONSET=build/AppIcon.iconset
+  rm -rf "$ICONSET" && mkdir -p "$ICONSET"
+  for size in 16 32 128 256 512; do
+    sips -z $size $size Icons/AppIcon.png --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
+    sips -z $((size*2)) $((size*2)) Icons/AppIcon.png --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
+  done
+  iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
+  rm -rf "$ICONSET"
 fi
-# ad-hoc signature: enough to run locally and to register the URL scheme
+cp .build/release/ShareExtension "$EXT/Contents/MacOS/ShareExtension"
+cp ShareExtension-Info.plist "$EXT/Contents/Info.plist"
+if [ -n "${VERSION:-}" ]; then
+  for plist in "$APP/Contents/Info.plist" "$EXT/Contents/Info.plist"; do
+    /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$plist"
+    /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$plist"
+  done
+fi
+# ad-hoc signatures: enough to run locally, to register the URL scheme and the share extension
+codesign --force --sign - --entitlements ShareExtension.entitlements "$EXT" >/dev/null
 codesign --force --sign - "$APP" >/dev/null
 ditto -c -k --keepParent "$APP" "build/Share-${VERSION:-dev}.zip"
 echo "built $APP, build/Share-${VERSION:-dev}.zip"

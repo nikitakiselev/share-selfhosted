@@ -143,6 +143,7 @@ const en = {
   'account.label': 'Account {login}',
   'account.admin': 'Administrator',
   'account.usageUnlimited': '{used}, unlimited',
+  'account.macApp': 'Share for macOS',
   'account.logoutAll': 'Sign out on all devices',
   'account.logout': 'Sign out',
   'account.logoutFailed': "Couldn't sign out",

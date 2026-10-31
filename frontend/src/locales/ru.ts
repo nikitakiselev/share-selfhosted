@@ -142,6 +142,7 @@ const ru: Dictionary = {
   'account.label': 'Аккаунт {login}',
   'account.admin': 'Администратор',
   'account.usageUnlimited': '{used}, без лимита',
+  'account.macApp': 'Share для macOS',
   'account.logoutAll': 'Выйти на всех устройствах',
   'account.logout': 'Выйти',
   'account.logoutFailed': 'Не получилось выйти',

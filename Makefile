@@ -1,5 +1,6 @@
 # Release from the workstation: tests, macOS app, the author's LXC instance, a tag and a GitHub
-# release. GitHub stores the code and the release; nothing is built there except the public
+# release (the app zip twice: versioned and as Share-macOS.zip, which the site links to under
+# releases/latest/download). GitHub stores the code and the release; nothing is built there except the public
 # Docker image that release.yml publishes on the tag for other people's installations.
 #
 #   make deploy                 # version from backend/pyproject.toml
@@ -55,4 +56,5 @@ release:
 	git push -q origin main
 	git tag -a $(TAG) -m "Release $(TAG)"
 	git push -q origin $(TAG)
-	gh release create $(TAG) --title "$(TAG)" --generate-notes $(ZIP)
+	cp $(ZIP) macos/build/Share-macOS.zip
+	gh release create $(TAG) --title "$(TAG)" --generate-notes $(ZIP) macos/build/Share-macOS.zip

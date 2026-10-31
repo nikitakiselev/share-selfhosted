@@ -15,6 +15,20 @@ cd macos
 
 The app is signed ad hoc, so it runs only on the Mac it was built on.
 
+## Finder: "Copy link with Share"
+
+`Sources/ShareExtension` is a share extension: it appears in the Finder share menu (and in
+the share sheet of other apps) once the app has been launched from /Applications. It sends
+the files to the app through `share-app://upload?path=…&expires=3600`; the app uploads them
+to a one-hour link, copies the link and shows it in the popover. If the item is missing,
+enable it in System Settings → General → Login Items & Extensions → Sharing.
+
+## Icons
+
+`Icons/MenuBarIcon.svg` is the status item (loaded as a template image), `Icons/AppIcon.png`
+becomes `AppIcon.icns` at build time (Dock, Finder, the share menu). Both were drawn by
+ChatGPT; `Icons/prompts.json` keeps the prompts and the conversation link for redoing them.
+
 ## Sign-in
 
 "Sign in" opens `<server>/connect` in the browser with a PKCE challenge. After signing in

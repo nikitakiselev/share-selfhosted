@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CircleUser, KeyRound, LogOut, MonitorSmartphone, Users } from '@lucide/vue'
+import { CircleUser, Download, KeyRound, LogOut, MonitorSmartphone, Users } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -21,6 +21,8 @@ import ChangePasswordDialog from './ChangePasswordDialog.vue'
 
 const router = useRouter()
 const passwordOpen = ref(false)
+// The menu bar app for macOS: the zip attached to the latest GitHub release under a fixed name
+const MAC_APP_URL = 'https://github.com/nikitakiselev/share-selfhosted/releases/latest/download/Share-macOS.zip'
 
 const usageLine = computed(() => {
   const u = currentUsage.value
@@ -73,6 +75,10 @@ async function logout(everywhere: boolean) {
       <DropdownMenuItem @select="openPassword">
         <KeyRound />
         {{ t('password.title') }}
+      </DropdownMenuItem>
+      <DropdownMenuItem as="a" :href="MAC_APP_URL">
+        <Download />
+        {{ t('account.macApp') }}
       </DropdownMenuItem>
       <DropdownMenuItem @select="logout(true)">
         <MonitorSmartphone />

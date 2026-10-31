@@ -125,8 +125,11 @@ final class ApiClient {
 
     // --- links ---
 
-    func createShare() async throws -> ShareSummary {
-        try await json(ShareSummary.self, request("POST", "api/app/shares", body: Data("{}".utf8), json: true))
+    func createShare(expiresAt: Int? = nil) async throws -> ShareSummary {
+        var obj: [String: Any] = [:]
+        if let expiresAt { obj["expires_at"] = expiresAt }
+        let body = try JSONSerialization.data(withJSONObject: obj)
+        return try await json(ShareSummary.self, request("POST", "api/app/shares", body: body, json: true))
     }
 
     func deleteShare(_ slug: String) async throws {

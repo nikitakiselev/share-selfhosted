@@ -35,7 +35,7 @@ ChatGPT; `Icons/prompts.json` keeps the prompts and the conversation link for re
 "Sign in" opens `<server>/connect` in the browser with a PKCE challenge. After signing in
 there, you confirm the connection, the server issues a one-time code and the browser hands it
 back through the `share-app://` URL scheme. The app exchanges the code and its verifier for a
-session token (`POST /api/auth/app/token`) and keeps the token in the login keychain; every API
+session token (`POST /api/auth/app/token`) and keeps the token in ~/Library/Application Support/Share (the app is signed ad hoc, so the keychain would ask for the login password after every rebuild); every API
 call sends it as `Authorization: Bearer`. "Sign out" ends that session on the server.
 
 The server is `https://share.nikitakiselev.com` by default. Another one:

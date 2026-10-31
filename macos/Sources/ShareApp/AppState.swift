@@ -31,7 +31,7 @@ final class AppState: ObservableObject {
         let raw = UserDefaults.standard.string(forKey: Self.serverKey) ?? Self.defaultServer
         let url = URL(string: raw) ?? URL(string: Self.defaultServer)!
         serverHost = url.host ?? "share"
-        api = ApiClient(baseURL: url, token: Keychain.read(url.host ?? "share"))
+        api = ApiClient(baseURL: url, token: TokenStore.read(url.host ?? "share"))
         Task { await refresh() }
     }
 
@@ -98,7 +98,7 @@ final class AppState: ObservableObject {
             do {
                 let r = try await api.exchange(code: code, verifier: p.verifier)
                 api.token = r.token
-                Keychain.write(serverHost, r.token)
+                TokenStore.write(serverHost, r.token)
                 user = r.user
                 error = nil
                 phase = .ready
@@ -117,7 +117,7 @@ final class AppState: ObservableObject {
 
     private func forget() {
         api.token = nil
-        Keychain.delete(serverHost)
+        TokenStore.delete(serverHost)
         user = nil
         phase = .signedOut(waiting: false)
     }
@@ -143,9 +143,15 @@ final class AppState: ObservableObject {
                 // does not eat into its lifetime
                 var files = files
                 for (i, file) in files.enumerated() where Packer.isDirectory(file) {
-                    phase = .uploading(index: i + 1, total: files.count, name: L10n.packing(file.lastPathComponent),
-                                       done: 0, size: 0)
-                    let zip = try await Packer.zip(file)
+                    let label = L10n.packing(file.lastPathComponent)
+                    let total = Packer.totalSize(file)
+                    phase = .uploading(index: i + 1, total: files.count, name: label, done: 0, size: total)
+                    let zip = try await Packer.zip(file) { done in
+                        Task { @MainActor in
+                            self.phase = .uploading(index: i + 1, total: files.count, name: label,
+                                                    done: min(done, total), size: total)
+                        }
+                    }
                     temp.append(zip)
                     files[i] = zip
                 }

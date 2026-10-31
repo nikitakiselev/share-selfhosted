@@ -7,8 +7,24 @@ enum Packer {
         (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
     }
 
+    /// Bytes of all regular files under the folder.
+    static func totalSize(_ folder: URL) -> Int64 {
+        var total: Int64 = 0
+        let keys: [URLResourceKey] = [.isRegularFileKey, .fileSizeKey]
+        if let e = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: keys, options: []) {
+            for case let url as URL in e {
+                if let v = try? url.resourceValues(forKeys: Set(keys)), v.isRegularFile == true {
+                    total += Int64(v.fileSize ?? 0)
+                }
+            }
+        }
+        return total
+    }
+
     /// `<tmp>/<uuid>/<name>.zip` for a folder; the caller removes the parent directory after the upload.
-    static func zip(_ folder: URL) async throws -> URL {
+    /// ditto reports nothing, so `progress` gets the growing size of the archive against the
+    /// folder size — exact for media and other incompressible data, short of the end otherwise.
+    static func zip(_ folder: URL, progress: @escaping (Int64) -> Void) async throws -> URL {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let out = dir.appendingPathComponent(folder.lastPathComponent + ".zip")
@@ -17,6 +33,15 @@ enum Packer {
         process.arguments = ["-c", "-k", "--sequesterRsrc", "--keepParent", folder.path, out.path]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
+        let poll = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                if let size = (try? FileManager.default.attributesOfItem(atPath: out.path))?[.size] as? Int64 {
+                    progress(size)
+                }
+            }
+        }
+        defer { poll.cancel() }
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
                 process.terminationHandler = { p in

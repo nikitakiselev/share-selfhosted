@@ -35,27 +35,41 @@ enum Packer {
     }
 
     /// `<tmp>/<uuid>/<name>` with the items zipped; the caller removes the parent directory after
-    /// the upload. ditto reports nothing, so `progress` gets the growing size of the archive
-    /// against the total size — exact for media and other incompressible data, short of the
-    /// end otherwise.
+    /// the upload. One folder goes through ditto (Finder's "Compress"); several items are added
+    /// one by one with zip from their own parent directories, since ditto takes a single source.
+    /// Neither reports progress, so `progress` gets the growing size of the temporary directory
+    /// against the total size — exact for media and other incompressible data, short of the end
+    /// otherwise.
     static func zip(_ items: [URL], name: String, progress: @escaping (Int64) -> Void) async throws -> URL {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let out = dir.appendingPathComponent(name)
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        process.arguments = ["-c", "-k", "--sequesterRsrc", "--keepParent"] + items.map(\.path) + [out.path]
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
         let poll = Task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 250_000_000)
-                if let size = (try? FileManager.default.attributesOfItem(atPath: out.path))?[.size] as? Int64 {
-                    progress(size)
-                }
+                progress(totalSize([dir]))
             }
         }
         defer { poll.cancel() }
+        if items.count == 1 {
+            try await run("/usr/bin/ditto", ["-c", "-k", "--sequesterRsrc", "--keepParent", items[0].path, out.path],
+                          cwd: nil)
+        } else {
+            for item in items {
+                try await run("/usr/bin/zip", ["-r", "-X", "-q", out.path, item.lastPathComponent],
+                              cwd: item.deletingLastPathComponent())
+            }
+        }
+        return out
+    }
+
+    private static func run(_ tool: String, _ arguments: [String], cwd: URL?) async throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: tool)
+        process.arguments = arguments
+        process.currentDirectoryURL = cwd
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
                 process.terminationHandler = { p in
@@ -63,7 +77,7 @@ enum Packer {
                         cont.resume()
                     } else {
                         cont.resume(throwing: ApiError(status: 0, code: "zip_failed",
-                                                       message: "ditto exited with \(p.terminationStatus)"))
+                                                       message: "\(URL(fileURLWithPath: tool).lastPathComponent) exited with \(p.terminationStatus)"))
                     }
                 }
                 do { try process.run() } catch { cont.resume(throwing: error) }
@@ -72,6 +86,5 @@ enum Packer {
             process.terminate()
         }
         try Task.checkCancellation()
-        return out
     }
 }

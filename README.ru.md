@@ -338,7 +338,9 @@ npm run build      # в frontend/dist, его бэкенд отдаёт из SHA
 
 В `macos/` лежит небольшое приложение для строки меню: перетащите файлы и скопируйте ссылку.
 Оно входит через сайт (страница `/connect`) и загружает файлы через тот же tus API. Для
-сборки нужен Xcode, см. [macos/README.md](macos/README.md).
+сборки нужен Xcode, см. [macos/README.md](macos/README.md). Zip приложения приложен к каждому
+[релизу](https://github.com/nikitakiselev/share-selfhosted/releases); подпись ad hoc, поэтому
+macOS попросит подтвердить первый запуск (правый клик → Открыть).
 
 ## Лицензия
 

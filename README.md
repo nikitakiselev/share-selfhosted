@@ -336,7 +336,9 @@ npm run build      # into frontend/dist, which the backend serves from SHARE_STA
 
 `macos/` holds a small menu bar app: drop files on it and copy the link. It signs in through
 the website (the `/connect` page) and uploads over the same tus API. Building needs Xcode, see
-[macos/README.md](macos/README.md).
+[macos/README.md](macos/README.md). A zip of the app is attached to every
+[release](https://github.com/nikitakiselev/share-selfhosted/releases); it is signed ad hoc, so
+macOS asks to confirm the first launch (right-click → Open).
 
 ## License
 

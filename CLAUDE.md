@@ -63,6 +63,8 @@ cd macos && ./build.sh && swift test
 
 ## Deploying the author's instance
 
-share.nikitakiselev.com is not run from the published image. It is deployed from the `homelab`
-repo: `~/code/homelab/infra/share/CLAUDE.md` has the host, the snapshot step and the script
-(`infra/deploy/install_share.sh deploy`). Tagging `vX.Y.Z` here only publishes the public image.
+`make deploy [VERSION=x.y.z]` from the workstation: tests, macOS app into `macos/build`, ZFS
+snapshot + the homelab script (`~/code/homelab/infra/deploy/install_share.sh deploy`, see
+`~/code/homelab/infra/share/CLAUDE.md`), then the tag, `git push` and a GitHub release with the
+app zip. share.nikitakiselev.com is not run from the published image: tagging `vX.Y.Z` only
+publishes the public image through release.yml.

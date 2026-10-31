@@ -241,6 +241,7 @@ const en = {
   'file.deleteNamed': 'Delete “{name}”',
   'file.download': 'Download “{name}”',
   'file.downloadSize': 'Download, {size}',
+  'file.downloadAction': 'Download',
   'file.watch': 'Watch “{name}”',
   'file.open': 'Open “{name}”',
   'file.uploading': 'Uploading…',

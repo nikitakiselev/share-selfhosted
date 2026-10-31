@@ -240,6 +240,7 @@ const ru: Dictionary = {
   'file.deleteNamed': 'Удалить «{name}»',
   'file.download': 'Скачать «{name}»',
   'file.downloadSize': 'Скачать, {size}',
+  'file.downloadAction': 'Скачать',
   'file.watch': 'Смотреть «{name}»',
   'file.open': 'Открыть «{name}»',
   'file.uploading': 'Загружается…',
